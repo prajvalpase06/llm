@@ -1,95 +1,112 @@
-import os
-import sqlite3
-
 import gradio as gr
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from tools import (
+    query_movie_database_tool,
+    handle_tool_calls
+)
+
 load_dotenv()
-api_key=os.getenv("OPENAI_API_KEY")
+
 client = OpenAI()
-model = "gpt-5-mini"
 
-def check_db_conn():
-    try:
-        conn = sqlite3.connect("movies.db")
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        return cursor.fetchall()
-    except sqlite3.Error as e:
-        return f"Database connection failed: {e}"
-    finally:
-        if conn:
-            conn.close()
+MODEL = "gpt-5-mini"
 
-def generate_sql_prompt(user_input):
-    system_prompt = """
-        You are an expert SQLite SQL generator.
 
-        Your job is to convert the user's natural language question into a valid SQLite SQL query.
+SYSTEM_PROMPT = """
+You are a helpful movie assistant.
 
-        Database schema:
+You answer questions ONLY about movies, actors, directors and genres.
+IGNORE ANYTHING ELSE. You are NOT a general knowledge assistant.
 
-        genres(
-            id INTEGER PRIMARY KEY,
-            name TEXT
-        )
+Whenever information from the movie database is required,
+ALWAYS use the query_movie_database tool.
 
-        directors(
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            country TEXT
-        )
+You MUST ONLY generate SQL using the tables and data available in the database.
 
-        actors(
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            country TEXT
-        )
+Never assume a movie exists.
 
-        movies(
-            id INTEGER PRIMARY KEY,
-            title TEXT,
-            release_year INTEGER,
-            duration_minutes INTEGER,
-            imdb_rating REAL,
-            box_office_million REAL,
-            genre_id INTEGER,
-            director_id INTEGER,
-            lead_actor_id INTEGER
-        )
+Never insert literal movie names unless the user explicitly mentioned them.
 
-        Relationships:
-        - movies.genre_id -> genres.id
-        - movies.director_id -> directors.id
-        - movies.lead_actor_id -> actors.id
+If the user asks for recommendations like
 
-        Rules:
-        1. Return ONLY the SQL query.
-        2. Do NOT include markdown.
-        3. Do NOT include ```sql.
-        4. Generate valid SQLite syntax.
-        5. Use JOINs whenever information spans multiple tables.
-        6. Never invent tables or columns.
-        7. Only generate SELECT statements.
-        """
-    updated_system_prompt = f"The is asking: {user_input}\n\n{system_prompt}"
+"Any horror movies worth watching?"
+
+interpret that as
+
+"Show the highest rated Horror movies in the database."
+
+Do NOT use your own knowledge of famous movies.
+
+The database is the ONLY source of truth.
+
+Never make up movie information.
+
+If the database does not contain the answer,
+say you don't know.
+"""
+
+def chat(message, history):
+
+    messages = [
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT
+        }
+    ]
+
+    # Convert Gradio history -> OpenAI messages
+    for user_msg, assistant_msg in history:
+
+        messages.append({
+            "role": "user",
+            "content": user_msg
+        })
+
+        if assistant_msg is not None:
+            messages.append({
+                "role": "assistant",
+                "content": assistant_msg
+            })
+
+    # Current user message
+    messages.append({
+        "role": "user",
+        "content": message
+    })
+
     response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": updated_system_prompt},
-            {"role": "user", "content": user_input}
-        ]
+        model=MODEL,
+        messages=messages,
+        tools=[query_movie_database_tool]
     )
-    sql = response.choices[0].message.content.strip()
-    return sql
+
+    while response.choices[0].finish_reason == "tool_calls":
+
+        assistant_message = response.choices[0].message
+
+        messages.append(assistant_message)
+
+        tool_messages = handle_tool_calls(
+            assistant_message.tool_calls
+        )
+
+        messages.extend(tool_messages)
+
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            tools=[query_movie_database_tool]
+        )
+
+    return response.choices[0].message.content
 
 
-###  Testing the prompt generator 
+demo = gr.ChatInterface(
+    fn=chat,
+    title="🎬 Movie Assistant",
+    description="Ask questions about movies stored in the SQLite database."
+)
 
-# sql_query = generate_sql_prompt("Show me the top 5 highest-rated movies.")
-# print(sql_query)
-
-###
-
-
+demo.launch()
