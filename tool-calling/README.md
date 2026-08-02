@@ -1,188 +1,241 @@
-🎬 Movie Assistant – Text-to-SQL using OpenAI Function Calling
+# 🎬 Movie Assistant – Text-to-SQL using OpenAI Function Calling
 
 A simple LLM-powered movie assistant that converts natural language questions into SQL queries, executes them against a SQLite database, and returns human-friendly answers.
 
-This project demonstrates one of the core LLM application patterns:
+This project demonstrates one of the fundamental LLM application patterns:
 
-Natural Language → SQL → Database → LLM Response
+> **Natural Language → SQL → Database → LLM Response**
 
-⸻
+---
 
-🚀 Features
+## 🚀 Features
 
-* 🧠 Natural language querying of a movie database
-* 🤖 SQL generation using OpenAI GPT-5 Mini
-* 🗄️ SQLite database backend
-* 🔧 OpenAI Function Calling for database access
-* 💬 Gradio chat interface
-* 🔒 Read-only database access (SELECT queries only)
+- 🧠 Convert natural language into SQL queries
+- 🤖 SQL generation using OpenAI GPT-5 Mini
+- 🗄️ SQLite database backend
+- 🔧 OpenAI Function Calling
+- 💬 Interactive Gradio chat interface
+- 🔒 Read-only database access (SELECT queries only)
 
-⸻
+---
 
-🏗️ Project Architecture
+## 🏗️ Architecture
 
-User
-  │
-  ▼
-Gradio Chat UI
-  │
-  ▼
-GPT-5 Mini
-  │
-  ▼
-Function Call
-(query_movie_database)
-  │
-  ▼
-Generate SQL
-  │
-  ▼
-Execute SQL (SQLite)
-  │
-  ▼
-Return Query Results
-  │
-  ▼
-GPT-5 Mini
-  │
-  ▼
-Natural Language Response
+```text
+                User
+                  │
+                  ▼
+          Gradio Chat UI
+                  │
+                  ▼
+             GPT-5 Mini
+                  │
+                  ▼
+        Function Calling
+                  │
+                  ▼
+     query_movie_database()
+                  │
+      ┌───────────┴───────────┐
+      ▼                       ▼
+Generate SQL           Execute SQL
+      │                       │
+      └───────────┬───────────┘
+                  ▼
+          SQLite Database
+                  │
+                  ▼
+          Query Results
+                  │
+                  ▼
+             GPT-5 Mini
+                  │
+                  ▼
+      Natural Language Answer
+```
 
-⸻
+---
 
-📂 Project Structure
+## 📂 Project Structure
 
+```text
 .
 ├── main.py               # Gradio application
-├── database.py           # SQLite utilities
-├── sql_generator.py      # LLM → SQL generation
+├── database.py           # SQLite helper functions
+├── sql_generator.py      # Converts natural language → SQL
 ├── tools.py              # Function calling logic
-├── seed_database.py      # Creates and populates fake movie database
+├── seed_database.py      # Creates and populates the database
 ├── movies.db
 ├── requirements.txt
 └── .env
+```
 
-⸻
+---
 
-🗃️ Database Schema
+## 🗃️ Database Schema
 
-Movies
+### `movies`
 
-* id
-* title
-* release_year
-* duration_minutes
-* imdb_rating
-* box_office_million
-* genre_id
-* director_id
-* lead_actor_id
+| Column | Type |
+|--------|------|
+| id | INTEGER |
+| title | TEXT |
+| release_year | INTEGER |
+| duration_minutes | INTEGER |
+| imdb_rating | REAL |
+| box_office_million | REAL |
+| genre_id | INTEGER |
+| director_id | INTEGER |
+| lead_actor_id | INTEGER |
 
-Genres
+### `genres`
 
-* id
-* name
+| Column | Type |
+|--------|------|
+| id | INTEGER |
+| name | TEXT |
 
-Directors
+### `directors`
 
-* id
-* name
-* country
+| Column | Type |
+|--------|------|
+| id | INTEGER |
+| name | TEXT |
+| country | TEXT |
 
-Actors
+### `actors`
 
-* id
-* name
-* country
+| Column | Type |
+|--------|------|
+| id | INTEGER |
+| name | TEXT |
+| country | TEXT |
 
-Relationships
+### Relationships
 
-* movies.genre_id → genres.id
-* movies.director_id → directors.id
-* movies.lead_actor_id → actors.id
+- `movies.genre_id → genres.id`
+- `movies.director_id → directors.id`
+- `movies.lead_actor_id → actors.id`
 
-⸻
+---
 
-🧩 Tech Stack
+## 🛠️ Tech Stack
 
-* Python
-* OpenAI API
-* GPT-5 Mini
-* SQLite3
-* Gradio
-* python-dotenv
+- Python
+- OpenAI API
+- GPT-5 Mini
+- SQLite
+- Gradio
+- python-dotenv
 
-⸻
+---
 
-▶️ Running the Project
+## ▶️ Getting Started
 
-Install dependencies
+### 1. Clone the repository
 
+```bash
+git clone <your-repository-url>
+cd <repository-name>
+```
+
+### 2. Create a virtual environment
+
+```bash
+python3 -m venv .venv
+```
+
+### 3. Activate the virtual environment
+
+**macOS / Linux**
+
+```bash
+source .venv/bin/activate
+```
+
+**Windows**
+
+```powershell
+.venv\Scripts\activate
+```
+
+### 4. Install dependencies
+
+```bash
 pip install -r requirements.txt
+```
 
-Create a .env file
+### 5. Configure environment variables
 
-OPENAI_API_KEY=your_api_key_here
+Create a `.env` file:
 
-Seed the database
+```env
+OPENAI_API_KEY=your_openai_api_key
+```
 
+### 6. Seed the database
+
+```bash
 python seed_database.py
+```
 
-Start the application
+### 7. Run the application
 
+```bash
 python main.py
+```
 
-⸻
+---
 
-💬 Example Queries
+## 💬 Example Queries
 
-Show me the top 5 highest-rated movies.
-Which director has directed the most movies?
-List all Action movies released after 2015.
-Which genre has the highest average IMDb rating?
-Show me movies longer than 2 hours.
-Who directed the highest-rated movie?
+- Show me the top 5 highest-rated movies.
+- Which director has directed the most movies?
+- List all Action movies released after 2015.
+- Show the lead actor of the highest-rated movie.
+- Which genre has the highest average IMDb rating?
+- Show movies longer than two hours.
 
-⸻
+---
 
-🔒 Safety
+## 🔒 Safety Measures
 
 The application is intentionally restricted to read-only database operations.
 
-* Only SELECT statements are executed.
-* SQL generated by the model is validated before execution.
-* The assistant is instructed not to invent tables or columns.
+- Only `SELECT` statements are executed.
+- SQL generated by the LLM is validated before execution.
+- The assistant is instructed to never invent tables or columns.
+- The database acts as the single source of truth.
 
-⸻
+---
 
-📚 What I Learned
+## 📚 What I Learned
 
-While building this project I explored:
+This project helped me gain hands-on experience with:
 
-* OpenAI Function Calling
-* Prompt engineering for text-to-SQL
-* SQLite integration in Python
-* Tool orchestration
-* LLM application architecture
-* Structuring multi-file Python projects
-* Building conversational interfaces with Gradio
+- OpenAI Function Calling
+- Prompt Engineering
+- Text-to-SQL workflows
+- SQLite integration
+- Tool orchestration
+- Building conversational interfaces with Gradio
+- Modular Python project architecture
 
-⸻
+---
 
-🚧 Future Improvements
+## 🚀 Future Improvements
 
-* Stream responses in the chat UI
-* Automatically generate prompts from the live database schema
-* Use Structured Outputs instead of plain-text SQL
-* Add SQL validation before execution
-* Add support for multiple tools
-* Conversation memory
-* Query execution logs
-* Support for PostgreSQL and MySQL
-* Better handling of ambiguous user questions
+- Streaming responses
+- Automatic schema extraction from SQLite
+- Structured Outputs instead of plain-text SQL
+- SQL validation layer
+- Query execution logs
+- Multi-tool agents
+- PostgreSQL/MySQL support
+- Better handling of ambiguous user queries
 
-⸻
+---
 
-📄 License
+## 📄 License
 
-This project was built for learning and experimentation with LLM application development.
+This project was built for learning and experimentation with Large Language Models and OpenAI Function Calling.
