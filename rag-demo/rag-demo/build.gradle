@@ -28,6 +28,7 @@ dependencies {
 	implementation 'org.springframework.ai:spring-ai-vector-store-advisor'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	runtimeOnly 'org.postgresql:postgresql'
 }
 
 dependencyManagement {
