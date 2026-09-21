@@ -1,0 +1,237 @@
+AETHERGRID
+
+Overview
+
+AetherGrid is a cloud-native data platform designed for real-time analytics, event processing, and distributed data management. It allows applications to ingest, process, query, and visualize high-volume event streams.
+
+AetherGrid was founded in 2021 by engineers specializing in distributed systems and real-time analytics. The platform was originally created to process financial transaction streams but later expanded to logistics, cybersecurity, IoT, and retail.
+
+The AetherGrid platform consists of four primary components: StreamCore for event ingestion, PulseEngine for real-time processing, AtlasStore for persistent storage, and Horizon for analytics and visualization.
+
+AetherGrid supports both real-time and historical analytics. Real-time queries operate on events currently flowing through the platform, while historical queries retrieve data stored in AtlasStore.
+
+
+STREAMCORE
+
+StreamCore is AetherGrid's distributed event ingestion service. It accepts events through REST APIs, gRPC endpoints, and Kafka-compatible producers.
+
+StreamCore automatically partitions incoming events across worker nodes. Events are partitioned using configurable keys, allowing applications to preserve ordering for related events.
+
+StreamCore can process up to 4 million events per second on a 12-node production cluster under the default configuration. Actual throughput depends on event size, partition count, replication settings, and downstream processing.
+
+Events submitted to StreamCore can contain structured JSON payloads, timestamps, metadata, correlation identifiers, and optional schema definitions.
+
+StreamCore supports configurable retention periods ranging from one hour to ninety days. Retention policies can be configured independently for different event streams.
+
+The AetherGrid ingestion API accepts batches of up to 10,000 events per request. Applications sending larger workloads should divide events into multiple batches.
+
+
+PULSEENGINE
+
+PulseEngine is AetherGrid's real-time processing engine. It performs filtering, aggregation, enrichment, joins, and anomaly detection against incoming event streams.
+
+PulseEngine uses a distributed execution model in which processing jobs are divided into stages. Each stage can execute independently across multiple worker nodes.
+
+PulseEngine supports sliding-window, tumbling-window, and session-window operations. Sliding windows are useful for continuously evaluating metrics such as transaction velocity or rolling averages.
+
+AetherGrid's anomaly detection module is called Sentinel. Sentinel can identify statistical deviations in event streams without requiring users to manually define every possible abnormal pattern.
+
+Sentinel supports configurable sensitivity levels. Increasing sensitivity increases the number of potential anomalies reported but may also increase false positives.
+
+Sentinel anomaly detection operates inside PulseEngine, meaning anomalous events can be identified before they are persisted to AtlasStore.
+
+
+ATLASSTORE
+
+AtlasStore is AetherGrid's distributed storage engine. It stores processed events and analytical results across multiple availability zones.
+
+AtlasStore uses columnar storage for analytical workloads. Columnar organization allows queries that access only a subset of fields to avoid scanning unrelated data.
+
+AtlasStore automatically replicates data across three availability zones in its standard production configuration.
+
+AtlasStore supports time-travel queries. Developers can request the state of stored data as it existed at a previous point in time, provided the requested timestamp falls within the configured retention period.
+
+AtlasStore uses ZetaCompress, a proprietary compression algorithm optimized for time-series and event data. Compression ratios vary depending on the structure and repetitiveness of the stored events.
+
+Time-travel queries cannot retrieve data beyond the configured AtlasStore retention period. Once data expires, it cannot be recovered through the standard AetherGrid APIs.
+
+
+HORIZON
+
+Horizon is AetherGrid's browser-based analytics interface. It allows users to create dashboards, configure charts, inspect event streams, and monitor system health.
+
+Horizon dashboards can display real-time metrics including events per second, processing latency, error rates, active workers, and storage utilization.
+
+Horizon provides a topology visualization that displays relationships between event streams, processing jobs, storage clusters, and downstream consumers.
+
+Horizon dashboards can be shared with other users through role-based access controls. Administrators can restrict dashboards to specific teams or organizational groups.
+
+Horizon currently supports dashboards with a maximum of 100 widgets. Dashboards containing more widgets may experience slower loading times.
+
+
+SECURITY
+
+Security in AetherGrid is provided by a subsystem called Guardian. Guardian manages authentication, authorization, encryption policies, and audit logging.
+
+AetherGrid supports OAuth 2.0 and OpenID Connect for user authentication. Service-to-service authentication can use short-lived tokens or mutually authenticated TLS.
+
+All network communication with AetherGrid services is encrypted using TLS 1.3. Internal service communication can also be configured to require mutual TLS.
+
+Guardian provides role-based access control at the organization, project, stream, and dashboard levels. Permissions can include read, write, administer, and audit.
+
+AetherGrid maintains an immutable audit log for security-sensitive operations. Audit records include the identity of the actor, timestamp, operation type, resource identifier, and originating service.
+
+Guardian audit records are stored separately from normal application events to prevent application-level deletion operations from modifying security audit history.
+
+
+API
+
+The AetherGrid REST API is available under the /api/v2 endpoint. API requests require an access token unless the endpoint is explicitly documented as public.
+
+The AetherGrid ingestion API accepts batches of up to 10,000 events per request. Applications sending larger workloads should divide events into multiple batches.
+
+AetherGrid provides SDKs for Java, Python, Go, and TypeScript. The Java SDK supports both synchronous and asynchronous event publishing.
+
+API rate limits depend on the customer's subscription tier. Requests exceeding the configured limit receive HTTP status code 429 and a Retry-After response header.
+
+Applications can publish events using the Java SDK while administrators monitor those events through Horizon without requiring changes to the publishing application.
+
+
+PERFORMANCE
+
+AetherGrid's typical end-to-end event processing latency is between 20 and 80 milliseconds for workloads running within a single region. Cross-region processing can introduce additional network latency.
+
+Increasing the number of StreamCore partitions can improve ingestion throughput, but excessive partition counts can increase coordination overhead.
+
+PulseEngine processing jobs automatically scale between the configured minimum and maximum worker counts. Autoscaling decisions are based primarily on queue depth, processing latency, and CPU utilization.
+
+StreamCore can process up to 4 million events per second on a 12-node production cluster under the default configuration. Actual throughput depends on event size, partition count, replication settings, and downstream processing.
+
+
+DEPLOYMENT
+
+AetherGrid Cloud is available in AWS, Azure, and Google Cloud environments. Customers can select the geographic region in which their primary data is stored.
+
+AetherGrid can also be deployed in a customer's Kubernetes cluster using the AetherGrid Operator. The Operator manages upgrades, scaling, configuration, and health monitoring.
+
+The minimum recommended production deployment consists of three StreamCore nodes, three PulseEngine workers, and three AtlasStore replicas distributed across multiple availability zones.
+
+AetherGrid's default production configuration replicates data across three availability zones, while the Developer tier uses a single-zone configuration.
+
+
+PRICING AND SUBSCRIPTION TIERS
+
+AetherGrid offers three subscription tiers: Developer, Professional, and Enterprise.
+
+The Developer tier is intended for experimentation and small workloads. It includes up to 100,000 events per day, limited dashboard functionality, and seven days of data retention.
+
+The Professional tier supports up to 10 million events per day and includes advanced analytics, autoscaling, ninety days of configurable retention, and priority support.
+
+The Enterprise tier provides custom event limits, dedicated infrastructure options, private networking, advanced compliance controls, and a customer success manager.
+
+Subscription tier limits also affect API rate limits and infrastructure capabilities. Customers that exceed their event processing limits may need to upgrade their subscription or request a custom Enterprise configuration.
+
+
+LIMITATIONS AND OPERATIONAL CONSIDERATIONS
+
+AetherGrid does not guarantee exactly-once processing for external side effects. Applications performing financial or irreversible operations should implement idempotency keys when consuming processed events.
+
+Time-travel queries cannot retrieve data beyond the configured AtlasStore retention period. Once data expires, it cannot be recovered through the standard AetherGrid APIs.
+
+Horizon currently supports dashboards with a maximum of 100 widgets. Dashboards containing more widgets may experience slower loading times.
+
+Increasing StreamCore partitions can improve throughput, but excessive partition counts can increase coordination overhead.
+
+Sentinel's anomaly detection is probabilistic and may produce false positives. Increasing Sentinel sensitivity generally increases the number of potential anomalies reported.
+
+Cross-region processing can introduce additional network latency compared with workloads processed entirely within a single region.
+
+
+ARCHITECTURE SUMMARY
+
+AetherGrid applications typically send events to StreamCore using REST, gRPC, Kafka-compatible producers, or one of the official SDKs.
+
+StreamCore partitions and distributes incoming events across worker nodes. The events are then passed to PulseEngine, where filtering, aggregation, enrichment, joins, and anomaly detection can occur.
+
+PulseEngine can send processed results to AtlasStore for persistent storage. Sentinel operates within PulseEngine and can identify anomalies before the associated events are persisted.
+
+AtlasStore stores historical event data and analytical results. It provides columnar storage, multi-zone replication, compression through ZetaCompress, and time-travel queries within the configured retention period.
+
+Horizon provides the user-facing analytics layer. It allows teams to monitor StreamCore ingestion, PulseEngine processing, AtlasStore storage, anomaly detection, and overall system health.
+
+Guardian operates across the platform and manages authentication, authorization, encryption policies, and security auditing.
+
+A typical production deployment therefore follows this architecture:
+
+Applications → StreamCore → PulseEngine → AtlasStore
+
+Administrators and analysts interact with the platform through Horizon, while Guardian provides security controls across the platform.
+
+
+EXAMPLE USE CASES
+
+A financial institution can use StreamCore to ingest transaction events, PulseEngine to calculate rolling transaction velocities, Sentinel to identify unusual transaction patterns, and AtlasStore to retain historical transaction data for analysis.
+
+A logistics company can send GPS and vehicle telemetry through StreamCore, use PulseEngine to calculate real-time fleet metrics, store historical telemetry in AtlasStore, and display fleet status through Horizon.
+
+A cybersecurity team can stream authentication events and network activity into AetherGrid. PulseEngine can correlate events across multiple streams while Sentinel identifies statistical anomalies. Guardian can restrict access to security dashboards and maintain an immutable audit trail of administrative activity.
+
+An IoT company can use StreamCore to ingest sensor measurements from thousands of devices. PulseEngine can aggregate readings into time windows, while AtlasStore maintains historical measurements for long-term analysis.
+
+
+DEVELOPER EXPERIENCE
+
+Developers can interact with AetherGrid through REST APIs, gRPC, Kafka-compatible producers, or official SDKs.
+
+The Java SDK supports synchronous and asynchronous event publishing. Python, Go, and TypeScript SDKs are also available.
+
+The REST API uses the /api/v2 endpoint and requires an access token for protected operations.
+
+Applications exceeding API rate limits receive HTTP 429 responses along with a Retry-After header indicating when the request can be attempted again.
+
+The AetherGrid Operator provides Kubernetes-based deployments with automated configuration, health monitoring, scaling, and upgrades.
+
+
+KEY FACTS
+
+AetherGrid was founded in 2021.
+
+The platform consists primarily of StreamCore, PulseEngine, AtlasStore, Horizon, and Guardian.
+
+StreamCore handles event ingestion.
+
+PulseEngine handles real-time processing and anomaly detection.
+
+Sentinel is the anomaly detection component inside PulseEngine.
+
+AtlasStore provides persistent distributed storage.
+
+Horizon provides dashboards and visualization.
+
+Guardian handles security and auditing.
+
+StreamCore can process up to 4 million events per second on a 12-node cluster under the default configuration.
+
+The ingestion API supports batches of up to 10,000 events.
+
+AetherGrid uses TLS 1.3 for network communication.
+
+Service-to-service authentication can use short-lived tokens or mutual TLS.
+
+AtlasStore replicates data across three availability zones in its standard production configuration.
+
+The Developer tier supports up to 100,000 events per day.
+
+The Professional tier supports up to 10 million events per day.
+
+The Enterprise tier provides custom event limits and dedicated infrastructure options.
+
+AetherGrid supports AWS, Azure, and Google Cloud deployments.
+
+AetherGrid can also run inside customer-managed Kubernetes clusters.
+
+AtlasStore time-travel queries are limited by the configured data retention period.
+
+AetherGrid does not guarantee exactly-once processing for external side effects.
+
+Applications performing irreversible operations should use idempotency keys.
