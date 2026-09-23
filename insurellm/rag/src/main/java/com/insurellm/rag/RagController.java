@@ -1,12 +1,8 @@
 package com.insurellm.rag;
 
-
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import java.io.IOException;
 
 @RestController
@@ -15,19 +11,16 @@ public class RagController {
     private final RagService ragService;
 
     public RagController(RagService ragService) {
-        this.ragService = ragService;
+        this.ragService=ragService;
     }
 
     @PostMapping("/inject/company")
     public String injectCompany() throws IOException {
-
         return ragService.injectCompanyRecords();
     }
 
-    @PostMapping("/ask")
-    public String retreiveRelevant(@RequestBody String query) throws IOException {
-        return ragService.respondWithContext(query);
+    @PostMapping(value="/ask",produces=MediaType.TEXT_PLAIN_VALUE)
+    public Flux<String> ask(@RequestBody String query) {
+        return ragService.streamResponse(query);
     }
-
-
 }
