@@ -14,10 +14,10 @@ public class DocumentChunker {
         Document document = new Document(doc);
 
         TokenTextSplitter textSplitter = TokenTextSplitter.builder()
-                .withChunkSize(800)
-                .withMinChunkSizeChars(400)
-                .withMinChunkLengthToEmbed(10)
-                .withMaxNumChunks(10000)
+                .withChunkSize(100)
+                .withMinChunkSizeChars(50)
+                .withMinChunkLengthToEmbed(20)
+                .withMaxNumChunks(200)
                 .withKeepSeparator(true)
                 .build();
 

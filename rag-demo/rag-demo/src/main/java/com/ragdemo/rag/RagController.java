@@ -3,6 +3,7 @@ package com.ragdemo.rag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import com.ragdemo.rag.RagService.*;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,4 +25,8 @@ public class RagController {
         return ragService.load();
     }
 
+    @PostMapping("/retreive")
+    public String retrieve(@RequestBody String query){
+        return ragService.retrieveAndGenerateAnswer(query);
+    }
 }
