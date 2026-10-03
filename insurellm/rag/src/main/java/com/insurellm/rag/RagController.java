@@ -19,6 +19,11 @@ public class RagController {
         return ragService.injectCompanyRecords();
     }
 
+    @PostMapping("/inject/products")
+    public String injectProducts() throws IOException {
+        return ragService.injectProducts();
+    }
+
     @PostMapping(value="/ask",produces=MediaType.TEXT_PLAIN_VALUE)
     public Flux<String> ask(@RequestBody String query) {
         return ragService.streamResponse(query);

@@ -35,9 +35,17 @@ public class RagService {
         return "Inject Company details";
     }
 
+    public String injectProducts() throws IOException {
+        documentInject.ingestProducts();
+        return "Inject Product details";
+    }
+
     public String retreiveRelevantContext(String query) {
-        SearchRequest request=SearchRequest.builder().query(query).topK(2).build();
+        SearchRequest request=SearchRequest.builder().query(query).topK(4).build();
         List<Document> relevant=vectorStore.doSimilaritySearch(request);
+        for (Document d:relevant){
+            System.out.println("Similarity: " + d.getMetadata().get("distance"));
+        }
         return relevant.stream().map(Document::getText).collect(Collectors.joining("\n\n---CHUNK---\n\n"));
     }
 
