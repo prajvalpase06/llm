@@ -28,4 +28,9 @@ public class RagController {
     public Flux<String> ask(@RequestBody String query) {
         return ragService.streamResponse(query);
     }
+
+    @PostMapping("/inject/employees")
+    public String injectEmployees() throws IOException {
+        return ragService.injectEmployees();
+    }
 }
