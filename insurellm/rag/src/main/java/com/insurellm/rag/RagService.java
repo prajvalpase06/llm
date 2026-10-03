@@ -43,8 +43,12 @@ public class RagService {
     public String retreiveRelevantContext(String query) {
         SearchRequest request=SearchRequest.builder().query(query).topK(4).build();
         List<Document> relevant=vectorStore.doSimilaritySearch(request);
-        for (Document d:relevant){
-            System.out.println("Similarity: " + d.getMetadata().get("distance"));
+        for (Document doc : relevant) {
+
+            System.out.println("CONTENT: " + doc.getText());
+
+            System.out.println("METADATA: " + doc.getMetadata());
+
         }
         return relevant.stream().map(Document::getText).collect(Collectors.joining("\n\n---CHUNK---\n\n"));
     }
@@ -53,5 +57,10 @@ public class RagService {
         String context=retreiveRelevantContext(question);
         Prompt prompt=new Prompt(List.of(systemPromptTemplate.createMessage(Map.of("question",question,"context",context))));
         return chatClient.prompt(prompt).stream().content();
+    }
+
+    public String injectEmployees() throws IOException {
+        documentInject.ingestEmployees();
+        return "Inject employee details";
     }
 }

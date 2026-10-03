@@ -89,4 +89,46 @@ public class DocumentInject {
 
         vectorStore.add(chunks);
     }
+
+    public void ingestEmployees() throws IOException {
+        ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        Resource[] resources = resolver.getResources("classpath:knowledge-base/employees/*.md");
+
+        TokenTextSplitter splitter = TokenTextSplitter.builder()
+                .withChunkSize(500)
+                .withMinChunkSizeChars(200)
+                .build();
+
+        List<Document> chunks = new ArrayList<>();
+
+        for (Resource resource : resources) {
+            String content = new String(
+                    resource.getInputStream().readAllBytes(),
+                    StandardCharsets.UTF_8
+            );
+
+            String[] sections = content.split("(?m)(?=^## )");
+
+            for (String section : sections) {
+                String sectionName = section.lines()
+                        .findFirst()
+                        .orElse("")
+                        .replaceFirst("^##\\s*", "")
+                        .trim();
+
+                String name = resource.getFilename();
+
+                Document d = new Document(section);
+
+                d.getMetadata().put("name", name);
+                d.getMetadata().put("source", resource.getFilename());
+                d.getMetadata().put("section", sectionName);
+                d.getMetadata().put("category", "employee");
+
+                chunks.addAll(splitter.split(d));
+            }
+        }
+
+        vectorStore.add(chunks);
+    }
 }
