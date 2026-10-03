@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Component
 public class DocumentInject {
@@ -40,6 +41,50 @@ public class DocumentInject {
             document.getMetadata().put("source", resource.getFilename());
 
             chunks.addAll(splitter.split(document));
+        }
+
+        vectorStore.add(chunks);
+    }
+
+    public void ingestProducts() throws IOException {
+        ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        Resource[] resources = resolver.getResources("classpath:knowledge-base/products/*.md");
+
+        TokenTextSplitter splitter = TokenTextSplitter.builder()
+                .withChunkSize(500)
+                .withMinChunkSizeChars(200)
+                .build();
+
+        List<Document> chunks = new ArrayList<>();
+
+        for (Resource resource : resources) {
+            String content = new String(
+                    resource.getInputStream().readAllBytes(),
+                    StandardCharsets.UTF_8
+            );
+
+            String product = Objects.requireNonNull(resource.getFilename()).replace(".md", "");
+            String[] sections = content.split("(?m)(?=^## )");
+
+            for (String section : sections) {
+                String sectionName = section.lines()
+                        .findFirst()
+                        .orElse("")
+                        .replaceFirst("^##\\s*", "")
+                        .trim();
+
+                if (sectionName.isEmpty()) {
+                    continue;
+                }
+
+                Document document = new Document(section);
+                document.getMetadata().put("category", "product");
+                document.getMetadata().put("product", product);
+                document.getMetadata().put("source", resource.getFilename());
+                document.getMetadata().put("section", sectionName);
+
+                chunks.addAll(splitter.split(document));
+            }
         }
 
         vectorStore.add(chunks);
